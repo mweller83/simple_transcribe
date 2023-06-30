@@ -3,6 +3,7 @@ import whisper
 from docx import Document
 import os, subprocess, platform
 from os.path import exists
+from pathlib import Path
 import threading
 import time
 
@@ -48,43 +49,39 @@ def transcribe(file_path, window):
     thread2.join(timeout=0)
     window.write_event_value('-THREAD-', 'Finished')
 
-layout = [[sg.Text('Audiodatei auswählen', size=(30,1)), sg.FileBrowse(key='-IN-')], 
-          [sg.Text('', size=(30,1)), sg.Button('Transkribieren')],
-          [sg.Text('Fortschritt', key='bar_label'), sg.ProgressBar(100, size=(20, 20), orientation='h', key='bar')],
+layout = [[sg.Button('Audiodatei auswählen', key='browse'), sg.Input(expand_x=True, disabled=True, key='file')], 
+          [sg.ProgressBar(100, size=(10, 10), expand_x=True, orientation='h', visible=False, key='bar')],
           ]
 
-window = sg.Window('Audio Transkribieren', layout, size=(400,100), finalize=True)   
+window = sg.Window('Audio Transkribieren', layout, size=(400,80), finalize=True)   
 
 thread = None
 progress = 0
 step = 2
 
-def show_progress_bar(bool):
-    window['bar_label'].update(visible=bool)
-    window['bar'].update(visible=bool)
-
-show_progress_bar(False)
-
 while True:
     event, values = window.read()
-    if event == sg.WIN_CLOSED or event == 'Exit': # if user closes window or clicks cancel
+    print('evt = {}, values = {}'.format(event, values))
+    if event == sg.WIN_CLOSED or event == 'Exit':
         if thread:
             thread.join(timeout=0)
         break
-    elif event == 'Transkribieren' and not thread:
-        path = values['-IN-']
-        if path:
-            show_progress_bar(True)
-            window['Transkribieren'].update(disabled=True)
-            thread = threading.Thread(target=transcribe, args=(path, window))
-            thread.start()
+    elif event == 'browse' and not thread:
+        path = sg.popup_get_file("", no_window=True)
+        if not path or not Path(path).is_file():
+            continue
+        window['file'].update(path)
+        window['bar'].update(visible=True)
+        window['browse'].update(disabled=True)
+        thread = threading.Thread(target=transcribe, args=(path, window))
+        thread.start()
     elif event == '-THREAD-':
         thread.join(timeout=0)
         thread = None
         progress = 0
         window['bar'].update_bar(0,0)
-        show_progress_bar(False)
-        window['Transkribieren'].update(disabled=False)
+        window['bar'].update(visible=False)
+        window['browse'].update(disabled=False)
     elif event == 'update_bar':
         window['bar'].update_bar(progress)
         progress = progress + step
