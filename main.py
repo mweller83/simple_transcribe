@@ -38,13 +38,17 @@ def transcribe(file_path, window):
     thread2 = threading.Thread(target=update_progress_bar, args=(window, lambda: stop_thread))
     thread2.start()
     model = whisper.load_model('medium')
-    result = model.transcribe(file_path, language='de')
-    text = result['text']
-    document = Document()
-    document.add_paragraph(text)
-    fpath = find_new_filepath()
-    document.save(fpath)
-    launch_path(fpath)
+    try:
+        result = model.transcribe(file_path, language='de')
+        print('result = {}'.format(result))
+        text = result['text']
+        document = Document()
+        document.add_paragraph(text)
+        fpath = find_new_filepath()
+        document.save(fpath)
+        launch_path(fpath)
+    except: 
+        pass
     stop_thread = True
     thread2.join(timeout=0)
     window.write_event_value('-THREAD-', 'Finished')
@@ -61,7 +65,6 @@ step = 2
 
 while True:
     event, values = window.read()
-    print('evt = {}, values = {}'.format(event, values))
     if event == sg.WIN_CLOSED or event == 'Exit':
         if thread:
             thread.join(timeout=0)
@@ -79,7 +82,8 @@ while True:
         thread.join(timeout=0)
         thread = None
         progress = 0
-        window['bar'].update_bar(0,0)
+        step = 2
+        window['bar'].update_bar(0)
         window['bar'].update(visible=False)
         window['browse'].update(disabled=False)
     elif event == 'update_bar':
