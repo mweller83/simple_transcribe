@@ -1,11 +1,10 @@
+import os, subprocess, platform, time, threading
+from os.path import exists
+from pathlib import Path
+
 import PySimpleGUI as sg
 import whisper
 from docx import Document
-import os, subprocess, platform
-from os.path import exists
-from pathlib import Path
-import threading
-import time
 
 def find_new_filepath():
     fpath = 'doc-{}.docx'
@@ -40,7 +39,6 @@ def transcribe(file_path, window):
     model = whisper.load_model('medium')
     try:
         result = model.transcribe(file_path, language='de')
-        print('result = {}'.format(result))
         text = result['text']
         document = Document()
         document.add_paragraph(text)
@@ -89,7 +87,7 @@ while True:
     elif event == 'update_bar':
         window['bar'].update_bar(progress)
         progress = progress + step
-        if progress > 100 or progress < 0:
+        if progress >= 100 or progress <= 0:
             step *= -1
 
 window.close()
