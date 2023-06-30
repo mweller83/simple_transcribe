@@ -10,5 +10,5 @@ https://www.pysimplegui.org/en/latest/#install
 
 $ brew install ffmpeg
 
-$ pip install -r requirements.txt
+$ pip install -r requirements.txt  
 $ pip install openai-whisper python-docx pysimplegui
